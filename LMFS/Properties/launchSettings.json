@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "LMFS": {
+      "commandName": "Project",
+      "commandLineArgs": ""
+    }
+  }
+}
