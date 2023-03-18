@@ -3,7 +3,7 @@ using System.Text;
 
 namespace LMFS.Data {
     public enum DataType {
-        Default, Zip
+        Default, Zip, Hash
     }
     public class HttpQueries {
         Dictionary<string, string> data = new Dictionary<string, string>();
@@ -14,7 +14,7 @@ namespace LMFS.Data {
             }
             return null;
         }
-        public string? Get(string key,string fallback) {
+        public string? Get(string key, string fallback) {
             var uk = key.ToLower();
             if (data.ContainsKey(uk)) {
                 return data[uk];

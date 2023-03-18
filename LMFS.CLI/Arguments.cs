@@ -1,8 +1,8 @@
 ﻿namespace LMFS.CLI {
     public class Arguments {
         public string url;
-        public string remotepath;
-        public List<string> localpath = new List<string>();
+        public string remotepath = null;
+        public string localpath = null;
         public Operation Operation = Operation.help;
         public bool PreserveDeletedFolders;
         public bool PreserveDeletedFiles;
@@ -24,6 +24,9 @@
                         break;
                     case "push":
                         arguments.Operation = Operation.push;
+                        break;
+                    case "init":
+                        arguments.Operation = Operation.init;
                         break;
                     case "-Z":
                     case "--use-zip":
@@ -59,7 +62,7 @@
                                 arguments.remotepath = item;
                                 break;
                             case 1:
-                                arguments.localpath.Add(item);
+                                arguments.localpath = (item);
                                 break;
                             default:
                                 break;

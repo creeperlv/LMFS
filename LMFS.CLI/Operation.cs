@@ -1,5 +1,5 @@
 ﻿namespace LMFS.CLI {
     public enum Operation {
-        pull, push, help, GetList, get
+        pull, push, help, GetList, get,init
     }
 }
