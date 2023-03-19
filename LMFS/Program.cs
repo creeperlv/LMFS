@@ -5,7 +5,7 @@ using System.Diagnostics;
 namespace LMFS {
     public class Argument {
         public Operation Operation;
-        public string main_argument="config.json";
+        public string main_argument = "config.json";
         public static Argument FromArgs(string[] args) {
             Argument argument = new Argument();
             for (int i = 0; i < args.Length; i++) {
@@ -17,6 +17,12 @@ namespace LMFS {
                     case "init":
                         argument.Operation = Operation.Init;
                         break;
+                    case "init-user-base":
+                        argument.Operation = Operation.Init_User_Base;
+                        break;
+                    case "init-folder-attribute":
+                        argument.Operation = Operation.Init_Folder_Attribute;
+                        break;
                     case "export-template":
                         argument.Operation = Operation.ExportTemplate;
                         break;
@@ -25,20 +31,20 @@ namespace LMFS {
                         break;
                 }
             }
-            return  argument;
+            return argument;
         }
     }
     public enum Operation {
-        Help, Start, Init, ExportTemplate
+        Help, Start, Init, ExportTemplate, Init_User_Base, Init_Folder_Attribute
     }
     internal class Program {
         static void Main(string[] args) {
-            Argument argument=Argument.FromArgs(args);
+            Argument argument = Argument.FromArgs(args);
             switch (argument.Operation) {
                 case Operation.Start: {
 
                         Trace.Listeners.Add(new ConsoleLogger());
-                        ServerConfiguration conf =JsonConvert.DeserializeObject<ServerConfiguration>(File.ReadAllText(argument.main_argument))?? CreateNewConfiguration();
+                        ServerConfiguration conf = JsonConvert.DeserializeObject<ServerConfiguration>(File.ReadAllText(argument.main_argument)) ?? CreateNewConfiguration();
                         ServerCore serverCore = new ServerCore(conf);
                         serverCore.Start();
                         serverCore.Listen();
@@ -50,10 +56,17 @@ namespace LMFS {
                         Directory.CreateDirectory("./template/");
                     }
                     break;
+                case Operation.Init_User_Base: {
+                        ServerConfiguration serverConfiguration = CreateNewConfiguration();
+                        File.WriteAllText(argument.main_argument, JsonConvert.SerializeObject(serverConfiguration, Formatting.Indented));
+                        Directory.CreateDirectory("./template/");
+                    }
+                    break;
                 case Operation.ExportTemplate: {
                         ContentGenerator generator = new ContentGenerator();
                         generator.Export(argument.main_argument);
-                    }break;
+                    }
+                    break;
                 case Operation.Help: {
                         Console.WriteLine("Operations:");
                         Console.WriteLine();

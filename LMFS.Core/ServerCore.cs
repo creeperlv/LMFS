@@ -52,6 +52,9 @@ namespace LMFS.Core {
             else if (path.StartsWith("/dump")) {
                 Dump(context);
             }
+            else if (path.StartsWith("/auth")) {
+                _Auth(context);
+            }
             else if (path.StartsWith("/temp")) {
                 Temp(context);
             }
@@ -69,13 +72,24 @@ namespace LMFS.Core {
             }
         }
 
+        private void _Auth(HttpListenerContext context) {
+            var __q = context.Request.Url.Query;
+            if (__q != null) {
+                HttpQueries httpQueries = HttpQueries.FromString(__q);
+                var t=httpQueries.Get("type", "plain");
+            }
+            else {
+                Response(context.Response, "WRONG_QUERY", HttpStatusCode.BadRequest);
+                return;
+            }
+        }
         private void Push(HttpListenerContext context) {
             var __q = context.Request.Url.Query;
             if (__q == null) {
                 Response(context.Response, "WRONG_QUERY", HttpStatusCode.BadRequest);
                 return;
             }
-            if (Auth()) {
+            if (Auth(context)) {
                 __q = __q.Substring(1);
                 HttpQueries httpQueries = HttpQueries.FromString(__q);
                 Console.WriteLine(httpQueries.ToString());
@@ -155,7 +169,7 @@ namespace LMFS.Core {
                         else {
                             Console.WriteLine("Receiving Named Data");
                             var final = Path.Combine(com, name);
-                            Console.WriteLine("FINAL:"+final);
+                            Console.WriteLine("FINAL:" + final);
                             if (File.Exists(final))
                                 File.Delete(final);
                             using (var fs = File.Create(final)) {
@@ -188,7 +202,7 @@ namespace LMFS.Core {
                 Response(context.Response, "WRONG_QUERY", HttpStatusCode.BadRequest);
                 return;
             }
-            if (Auth()) {
+            if (Auth(context)) {
                 __q = __q.Substring(1);
                 HttpQueries httpQueries = HttpQueries.FromString(__q);
                 var path = httpQueries.Get("path");
@@ -228,7 +242,8 @@ namespace LMFS.Core {
             }
             response.Close();
         }
-        public bool Auth() {
+        public bool Auth(HttpListenerContext context) {
+            var auth = context.Request.Cookies["auth"];
             return true;
         }
         private void Remove(HttpListenerContext context) {
@@ -237,7 +252,7 @@ namespace LMFS.Core {
                 Response(context.Response, "WRONG_QUERY", HttpStatusCode.BadRequest);
                 return;
             }
-            if (Auth()) {
+            if (Auth(context)) {
                 __q = __q.Substring(1);
                 HttpQueries httpQueries = HttpQueries.FromString(__q);
                 var path = httpQueries.Get("path");
@@ -559,5 +574,6 @@ namespace LMFS.Core {
         public Dictionary<string, string> PathMap = new Dictionary<string, string>();
         public string Template = null;
         public MIMEMap MimeMap = null;
+        public string userbase=null;
     }
 }

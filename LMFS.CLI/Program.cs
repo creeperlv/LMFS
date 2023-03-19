@@ -50,7 +50,7 @@ namespace LMFS.CLI {
                             }
                         }
                         if (hit) {
-                            f.Delete();
+                            f.Delete(true);
                         }
                     }
                 }
