@@ -5,7 +5,9 @@ namespace LMFS.Data {
     public enum DataType {
         Default, Zip, Hash
     }
-    public enum AuthType {
-        plain, rsa
+
+    public enum AuthResult
+    {
+        Success, UserNameNotFound,HashMismatch,NotEnabled
     }
 }

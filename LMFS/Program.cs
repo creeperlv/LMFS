@@ -1,73 +1,144 @@
 ﻿using LMFS.Core;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Text;
 
-namespace LMFS {
-    public class Argument {
-        public Operation Operation;
-        public string main_argument = "config.json";
-        public static Argument FromArgs(string[] args) {
-            Argument argument = new Argument();
-            for (int i = 0; i < args.Length; i++) {
-                var item = args[i];
-                switch (item) {
-                    case "start":
-                        argument.Operation = Operation.Start;
-                        break;
-                    case "init":
-                        argument.Operation = Operation.Init;
-                        break;
-                    case "init-user-base":
-                        argument.Operation = Operation.Init_User_Base;
-                        break;
-                    case "init-folder-attribute":
-                        argument.Operation = Operation.Init_Folder_Attribute;
-                        break;
-                    case "export-template":
-                        argument.Operation = Operation.ExportTemplate;
-                        break;
-                    default:
-                        argument.main_argument = item;
-                        break;
+namespace LMFS
+{
+    internal class Program
+    {
+        static void InputListen()
+        {
+            while (true)
+            {
+                var line = Console.ReadLine();
+                if (line == "exit")
+                {
+                    Environment.Exit(0);
+                }
+                else if (line == "reload-templates")
+                {
+                    serverCore.LoadTemplate();
+                    Console.WriteLine("Done.");
+                }
+                else if (line == "save-runtime-auth")
+                {
+                    serverCore.LoadTemplate();
+                    Console.WriteLine("Done.");
                 }
             }
-            return argument;
         }
-    }
-    public enum Operation {
-        Help, Start, Init, ExportTemplate, Init_User_Base, Init_Folder_Attribute
-    }
-    internal class Program {
-        static void Main(string[] args) {
+        static ConsoleCache Cache = new ConsoleCache();
+        static void ConsoleService()
+        {
+            while (true)
+            {
+                var k = Console.ReadKey(true);
+                (int x, int y) = Console.GetCursorPosition();
+                if (k.Key == ConsoleKey.LeftArrow)
+                {
+                    x -= 1;
+                    Cache.Index = Math.Max(Cache.Index - 1, 0);
+                    Console.SetCursorPosition(Math.Max(0, Math.Min(Console.BufferWidth, x)), y);
+                }
+                else if (k.Key == ConsoleKey.RightArrow)
+                {
+                    x += 1;
+                    Cache.Index = Math.Min(Cache.Index - 1, Cache.str.Length - 1);
+                    Console.SetCursorPosition(Math.Max(0, Math.Min(Console.BufferWidth, x)), y);
+                }
+                else if (k.Key == ConsoleKey.Enter)
+                {
+                    string line = Cache.str;
+                    Cache.str = "";
+                    Cache.Index = 0;
+                    Console.WriteLine();
+                    Console.WriteLine(">" + line);
+                }
+                else if (k.Key == ConsoleKey.UpArrow)
+                {
+
+                }
+                else if (k.Key == ConsoleKey.DownArrow)
+                {
+
+                }
+                else if (k.Key == ConsoleKey.Backspace)
+                {
+
+                    Console.SetCursorPosition(0, y);
+                    Cache.Remove();
+                    for (int i = Cache.Index % Console.BufferWidth; i < Console.BufferWidth; i++)
+                    {
+                        Console.Write(' ');
+                    }
+                    Console.SetCursorPosition(0, y);
+                    Console.Write(Cache.str);
+
+                    Console.SetCursorPosition(Math.Max(0, Math.Min(Console.BufferWidth, Cache.Index % Console.BufferWidth)), y);
+                }
+                else
+                {
+                    Cache.AddChar(k.KeyChar);
+                    Cache.Index++;
+                    Console.Write(Cache.str.Substring(Cache.Index - 1));
+                    Console.SetCursorPosition(Math.Max(0, Math.Min(Console.BufferWidth, Cache.Index % Console.BufferWidth)), y);
+                }
+
+            }
+        }
+        static ServerCore serverCore;
+        static void Main(string[] args)
+        {
             Argument argument = Argument.FromArgs(args);
-            switch (argument.Operation) {
-                case Operation.Start: {
+            switch (argument.Operation)
+            {
+                case Operation.Start:
+                    {
 
                         Trace.Listeners.Add(new ConsoleLogger());
                         ServerConfiguration conf = JsonConvert.DeserializeObject<ServerConfiguration>(File.ReadAllText(argument.main_argument)) ?? CreateNewConfiguration();
-                        ServerCore serverCore = new ServerCore(conf);
+                        serverCore = new ServerCore(conf);
                         serverCore.Start();
-                        serverCore.Listen();
+                        if (argument.UseInput)
+                        {
+                            Task.Run(serverCore.Listen);
+                            //Task.Run(ConsoleService);
+                            //ConsoleService();
+                            InputListen();
+                        }
+                        else
+                        {
+
+                            serverCore.Listen();
+                        }
                     }
                     break;
-                case Operation.Init: {
+                case Operation.Init:
+                    {
                         ServerConfiguration serverConfiguration = CreateNewConfiguration();
                         File.WriteAllText(argument.main_argument, JsonConvert.SerializeObject(serverConfiguration, Formatting.Indented));
                         Directory.CreateDirectory("./template/");
                     }
                     break;
-                case Operation.Init_User_Base: {
-                        ServerConfiguration serverConfiguration = CreateNewConfiguration();
-                        File.WriteAllText(argument.main_argument, JsonConvert.SerializeObject(serverConfiguration, Formatting.Indented));
-                        Directory.CreateDirectory("./template/");
+                case Operation.Init_User_Base:
+                    {
+                        GenUserBase();
                     }
                     break;
-                case Operation.ExportTemplate: {
+                case Operation.Init_Auth_Base:
+                    {
+                        GenAuthBase();
+                    }
+                    break;
+                case Operation.ExportTemplate:
+                    {
                         ContentGenerator generator = new ContentGenerator();
                         generator.Export(argument.main_argument);
                     }
                     break;
-                case Operation.Help: {
+                case Operation.Help:
+                    {
                         Console.WriteLine("Operations:");
                         Console.WriteLine();
                         Console.WriteLine("start <configuration-file>");
@@ -84,8 +155,18 @@ namespace LMFS {
                     break;
             }
         }
+        public static void GenAuthBase()
+        {
+            Directory.CreateDirectory("./authbase/");
 
-        private static ServerConfiguration CreateNewConfiguration() {
+        }
+        public static void GenUserBase()
+        {
+            Directory.CreateDirectory("./userbase/");
+
+        }
+        private static ServerConfiguration CreateNewConfiguration()
+        {
             ServerConfiguration serverConfiguration = new ServerConfiguration();
             serverConfiguration.ListeningUrl.Add("http://localhost:8080/");
             serverConfiguration.PathMap.Add("/", "./webroot/");
