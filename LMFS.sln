@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LMFS.CLI", "LMFS.CLI\LMFS.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LMFS.Data", "LMFS.Data\LMFS.Data.csproj", "{4AD60397-3ACD-4F4B-A744-883E5838B348}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LMFS.Exchange.Core", "LMFS.Exchange.Core\LMFS.Exchange.Core.csproj", "{3BCF0B47-B97F-471F-9206-25702360C839}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LMFS.Exchange.Core", "LMFS.Exchange.Core\LMFS.Exchange.Core.csproj", "{3BCF0B47-B97F-471F-9206-25702360C839}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LMFS.Extensible", "LMFS.Extensible\LMFS.Extensible.csproj", "{07D4C6EE-1DB4-43BF-A411-2B352FFD5A59}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{3BCF0B47-B97F-471F-9206-25702360C839}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3BCF0B47-B97F-471F-9206-25702360C839}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3BCF0B47-B97F-471F-9206-25702360C839}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07D4C6EE-1DB4-43BF-A411-2B352FFD5A59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07D4C6EE-1DB4-43BF-A411-2B352FFD5A59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07D4C6EE-1DB4-43BF-A411-2B352FFD5A59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07D4C6EE-1DB4-43BF-A411-2B352FFD5A59}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

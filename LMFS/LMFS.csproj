@@ -12,6 +12,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\LMFS.Core\LMFS.Server.Core.csproj" />
+		<ProjectReference Include="..\LMFS.Extensible\LMFS.Extensible.csproj" />
 	</ItemGroup>
 
 </Project>
