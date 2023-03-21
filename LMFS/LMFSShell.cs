@@ -27,11 +27,11 @@ namespace LMFS {
                     Environment.Exit(0);
                 }
                 else if (line == "reload-templates") {
-                    serverCore.LoadTemplate();
+                    Program.serverCore.LoadTemplate();
                     Console.WriteLine("Done.");
                 }
                 else if (line == "save-runtime-auth") {
-                    serverCore.LoadTemplate();
+                    Program.serverCore.LoadTemplate();
                     Console.WriteLine("Done.");
                 }
                 else {

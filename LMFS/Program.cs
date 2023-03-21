@@ -57,7 +57,7 @@ namespace LMFS {
 
             }
         }
-        static ServerCore serverCore;
+        internal static ServerCore serverCore;
         static void Main(string[] args) {
             Argument argument = Argument.FromArgs(args);
             switch (argument.Operation) {
