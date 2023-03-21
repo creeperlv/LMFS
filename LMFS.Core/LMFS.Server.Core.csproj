@@ -1,17 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\LMFS.Data\LMFS.Data.csproj" />
-    <ProjectReference Include="..\LMFS.Exchange.Core\LMFS.Exchange.Core.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\LMFS.Data\LMFS.Data.csproj" />
+		<ProjectReference Include="..\LMFS.Exchange.Core\LMFS.Exchange.Core.csproj" />
+		<ProjectReference Include="..\LMFS.Extensible\LMFS.Extensible.csproj" />
+	</ItemGroup>
 
 </Project>

@@ -7,6 +7,7 @@
         public string Template = null;
         public MIMEMap MimeMap = null;
         public bool UserAuth = false;
+        public bool server_shell = false;
         public string userbase = null;
         public string authbase = null;
     }
