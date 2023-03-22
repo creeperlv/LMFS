@@ -14,48 +14,58 @@ namespace LMFS.Server.Core {
         LMFSConsole LMFSConsole;
         public void Execute(string command) {
             var s = CommandLineParser.Parse(command, false);
-            List<string> strings = new List<string>();
+            List<List<string>> Piped = new List<List<string>> {
+                new List<string>()
+            };
+            //List<string> strings = new List<string>();
             while (true) {
-                strings.Add(s.content);
+                if (s.content == "|")
+                    Piped.Add(new List<string>());
+                else
+                    Piped.Last().Add(s.content);
                 if (s.Next == null) break;
                 s = s.Next;
             }
-            if (strings.Count > 0) {
-                var name = strings.First();
-                strings.RemoveAt(0);
-                if (functions.ContainsKey(name)) {
-                    try {
-                        var proc = (FunctionBase)Activator.CreateInstance(functions[name]);
-                        proc.LMFSConsole = LMFSConsole;
+            foreach (var strings in Piped) {
+                if (strings.Count > 0) {
+                    var name = strings.First();
+                    strings.RemoveAt(0);
+                    if (functions.ContainsKey(name)) {
                         try {
-                            proc.Run(strings.ToArray());
-                        }
-                        catch (Exception e) {
-                            LMFSConsole.STDOUT.WriteLine("Something went wrong: " + e);
-                        }
-                        finally {
+                            var proc = (FunctionBase)Activator.CreateInstance(functions[name]);
+                            proc.LMFSConsole = LMFSConsole;
                             try {
-                                proc.Dispose();
+                                proc.Run(strings.ToArray());
                             }
                             catch (Exception e) {
-                                LMFSConsole.STDOUT.WriteLine("Something went wrong at cleanup: " + e);
+                                LMFSConsole.STDOUT.WriteLine("Something went wrong: " + e);
+                            }
+                            finally {
+                                try {
+                                    proc.Dispose();
+                                }
+                                catch (Exception e) {
+                                    LMFSConsole.STDOUT.WriteLine("Something went wrong at cleanup: " + e);
+                                }
                             }
                         }
-                    }
-                    catch (Exception) {
-                    }
+                        catch (Exception) {
+                        }
 
-                }
-                else {
-                    LMFSConsole.STDOUT.WriteLine("Command not found.");
+                    }
+                    else {
+                        LMFSConsole.STDOUT.WriteLine("Command not found.");
+                    }
                 }
             }
         }
         public void InputListen() {
-            LMFSConsole =new LMFSConsole();
+            LMFSConsole = new LMFSConsole();
             LMFSConsole.STDOUT = Console.Out;
             LMFSConsole.STDIN = Console.In;
             CommandLineParser = new CommandLineParser();
+            CommandLineParser.PredefinedSegmentCharacters.Add('=');
+            CommandLineParser.PredefinedSegmentCharacters.Add('|');
             {
                 var ts = GetTypesWithAttribute<LMFSFunctionAttribute>();
                 foreach (var item in ts) {

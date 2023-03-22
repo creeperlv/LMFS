@@ -3,6 +3,7 @@
 //////////////////////////////////////
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -127,6 +128,43 @@ namespace LMFS.Extensible {
             }
         }
     }
+    [LMFSFunction("export")]
+    public class Export : FunctionBase {
+        public override void Dispose() {
+        }
+
+        public override void Run(params string[] args) {
+            if (args.Length == 0) {
+                foreach (DictionaryEntry item in LMFSExtensibleEnv.Environments) {
+
+                    LMFSConsole.STDOUT.WriteLine($"{item.Key}={item.Value}");
+                }
+            }
+            else {
+                for (int i = 0; i < args.Length; i++) {
+                    var item = args[i];
+                    if (item.StartsWith('-')) {
+
+                    }
+                    else {
+                    }
+                }
+            }
+        }
+    }
+    [LMFSFunction("echo")]
+    public class Echo : FunctionBase {
+        public override void Dispose() {
+        }
+
+        public override void Run(params string[] args) {
+            foreach (var item in args) {
+
+                LMFSConsole.STDOUT.Write(String.Join(' ', item));
+            }
+            LMFSConsole.STDOUT.WriteLine();
+        }
+    }
 
     [LMFSFunction("exec")]
     public class Exec : FunctionBase {
@@ -140,11 +178,12 @@ namespace LMFS.Extensible {
                 _args += args[i];
                 _args += " ";
             }
-            processStartInfo.Arguments=_args;
+            processStartInfo.Arguments = _args;
             processStartInfo.RedirectStandardInput = true;
-            processStartInfo.RedirectStandardOutput= true;
+            processStartInfo.RedirectStandardOutput = true;
+            processStartInfo.WorkingDirectory = LMFSExtensibleEnv.CurrentDirectory;
             //processStartInfo.standard
-            var p=Process.Start(processStartInfo);
+            var p = Process.Start(processStartInfo);
             //p.OutputDataReceived += (sender, args) => { LMFSConsole.STDOUT.WriteLine(args.Data); };
             Task.Run(() => {
                 while (true) {
