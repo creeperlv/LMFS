@@ -1,4 +1,5 @@
 ﻿using LMFS.Data;
+using LMFS.Data.Utilities;
 using LMFS.Exchange.Core;
 using LMFS.Server.Core.Auth;
 using Newtonsoft.Json;
@@ -16,8 +17,8 @@ namespace LMFS.Core
         ServerConfiguration configuration;
         ContentGenerator contGen = null;
         MIMEMap mime_map;
-        UserBase UserBase=null;
-        AuthBase AuthBase=null;
+        UserBase UserBase = null;
+        AuthBase AuthBase = null;
         public void LoadTemplate()
         {
             if (contGen != null)
@@ -85,6 +86,10 @@ namespace LMFS.Core
             else if (path.StartsWith("/get"))
             {
                 Get(context);
+            }
+            else if (path.StartsWith("/set"))
+            {
+                Set(context);
             }
             else if (path.StartsWith("/push"))
             {
@@ -390,6 +395,60 @@ namespace LMFS.Core
             mapped_target = null;
             return false;
         }
+        private void Set(HttpListenerContext context)
+        {
+            var query = context.Request.Url.Query;
+            if (query == null || query == "")
+            {
+                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                context.Response.Close();
+            }
+            else
+            {
+                query = query.Substring(1);
+                HttpQueries httpQueries = HttpQueries.FromString(query);
+                var queries = query.Split('&');
+                var _path = httpQueries.Get("path");
+                DateTime? date = null;
+                {
+                    var writeTime = httpQueries.Get("writetime");
+                    if (writeTime != null)
+                    {
+                        try
+                        {
+                            date = new DateTime(long.Parse(writeTime));
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+                }
+                if (GetPath(_path, out var relative, out var combined, out var root))
+                {
+                    if (Directory.Exists(combined))
+                    {
+                        if (date != null)
+                        {
+                            Directory.SetLastWriteTime(combined, date.Value);
+                        }
+                    }
+                    else if (File.Exists(combined))
+                    {
+                        File.SetLastWriteTime(combined, date.Value);
+                    }
+                    else
+                    {
+                        Response(context.Response, "RESOURCE_NOT_FOUND", HttpStatusCode.NotFound);
+                        return;
+                    }
+                }
+                else
+                {
+                    Response(context.Response, "MISMATCH_MAPPING", HttpStatusCode.NotFound);
+                    return;
+                }
+            }
+        }
         private void Get(HttpListenerContext context)
         {
             var query = context.Request.Url.Query;
@@ -400,7 +459,6 @@ namespace LMFS.Core
             }
             else
             {
-
                 query = query.Substring(1);
                 HttpQueries httpQueries = HttpQueries.FromString(query);
                 var queries = query.Split('&');
@@ -444,17 +502,35 @@ namespace LMFS.Core
                                 break;
                             case DataType.Zip:
                                 break;
+                            case DataType.WriteTime:
+                                {
+                                    Response(context.Response, Directory.GetLastWriteTimeUtc(combined).ToBinary().ToString(), HttpStatusCode.NotFound);
+                                }
+                                break;
                             default:
                                 break;
                         }
                     }
                     else if (File.Exists(combined))
                     {
-                        using (var fs = File.OpenRead(combined))
+                        if (responseType == DataType.Default)
                         {
-                            fs.CopyTo(context.Response.OutputStream);
+                            using (var fs = File.OpenRead(combined))
+                            {
+                                fs.CopyTo(context.Response.OutputStream);
+                            }
+                            context.Response.Close();
                         }
-                        context.Response.Close();
+                        else if (responseType == DataType.Hash)
+                        {
+                            Response(context.Response, File.ReadAllBytes(combined).HashString(), HttpStatusCode.NotFound);
+
+                        }
+                        else if (responseType == DataType.WriteTime)
+                        {
+                            Response(context.Response, File.GetLastWriteTimeUtc(combined).ToBinary().ToString(), HttpStatusCode.NotFound);
+
+                        }
                     }
                     else
                     {

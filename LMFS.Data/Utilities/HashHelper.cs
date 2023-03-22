@@ -10,6 +10,25 @@ namespace LMFS.Data.Utilities
 {
     public static class HashHelper
     {
+        public static byte[] HashBytes(this byte[] data)
+        {
+
+            using (SHA256 _sha = SHA256.Create())
+            {
+                var hash = _sha.ComputeHash(data);
+                return hash;
+            }
+        }
+        public static string HashString(this byte[] data)
+        {
+
+            using (SHA256 _sha = SHA256.Create())
+            {
+                var hash = _sha.ComputeHash(data);
+                var hash_str = Convert.ToBase64String(hash);
+                return hash_str;
+            }
+        }
         public static string AddSalt(this string content)
         {
             var now=DateTime.UtcNow;
