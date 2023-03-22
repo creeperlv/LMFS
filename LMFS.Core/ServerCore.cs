@@ -57,16 +57,30 @@ namespace LMFS.Core
             while (true)
             {
                 var contenxt = HttpListener.GetContext();
-                Task.Run(() => Process(contenxt));
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        Process(contenxt);
+                    }
+                    catch (Exception e)
+                    {
+                        Trace.WriteLine($"[{DateTime.UtcNow}][Error]{e.Message}");
+                        try
+                        {
+                            contenxt.Response.Close();
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+                });
             }
         }
         void Process(HttpListenerContext context)
         {
             var path = context.Request.Url.LocalPath;
-            //foreach (var item in context.Request.Headers.GetValues("User-Agent")) {
-            //    //Console.WriteLine(item);
-            //}
-            Trace.WriteLine("Query:" + path);
+            Trace.WriteLine($"[{DateTime.UtcNow}]Url:{path}");
             if (path.StartsWith("/browse"))
             {
                 Browse(context);
@@ -129,7 +143,6 @@ namespace LMFS.Core
                 Response(context.Response, "WRONG_QUERY", HttpStatusCode.BadRequest);
                 return;
             }
-            if (Auth(context))
             {
                 __q = __q.Substring(1);
                 HttpQueries httpQueries = HttpQueries.FromString(__q);
@@ -142,42 +155,82 @@ namespace LMFS.Core
                 Console.WriteLine($"Will: Rec to :{path}, name is={name}");
                 if (GetPath(path, out var rel, out var com, out var mpt))
                 {
-                    DataType dataType = DataType.Default;
-                    if (!Enum.TryParse<DataType>(content_type, out dataType))
-                        dataType = DataType.Default;
-                    if (com.EndsWith("/") || com.EndsWith("\\"))
+                    if (Auth(context, com))
                     {
-                        //Directory.
-                        if (name == null)
-                        {
-                            if (dataType == DataType.Default)
-                            {
-                                Response(context.Response, "MISSING_NAME", HttpStatusCode.BadRequest);
-                                return;
-                            }
-                            else if (dataType == DataType.Zip)
-                            {
-                                var final = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                        //TODO
 
-                                using (var fs = File.Create(final))
+                        DataType dataType = DataType.Default;
+                        if (!Enum.TryParse<DataType>(content_type, out dataType))
+                            dataType = DataType.Default;
+                        if (com.EndsWith("/") || com.EndsWith("\\"))
+                        {
+                            //Directory.
+                            if (name == null)
+                            {
+                                if (dataType == DataType.Default)
                                 {
-                                    context.Request.InputStream.CopyTo(fs);
-                                }
-                                ZipFile.ExtractToDirectory(final, com);
-                                File.Delete(final);
-                                if (WillConfirm)
-                                {
-                                    Response(context.Response, "DONE", HttpStatusCode.OK);
+                                    Response(context.Response, "MISSING_NAME", HttpStatusCode.BadRequest);
                                     return;
+                                }
+                                else if (dataType == DataType.Zip)
+                                {
+                                    var final = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+
+                                    using (var fs = File.Create(final))
+                                    {
+                                        context.Request.InputStream.CopyTo(fs);
+                                    }
+                                    ZipFile.ExtractToDirectory(final, com);
+                                    File.Delete(final);
+                                    if (WillConfirm)
+                                    {
+                                        Response(context.Response, "DONE", HttpStatusCode.OK);
+                                        return;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                com = Path.Combine(com, name);
+                                if (dataType == DataType.Default)
+                                {
+
+                                    if (File.Exists(com)) File.Delete(com);
+                                    using (var fs = File.Create(com))
+                                    {
+                                        context.Request.InputStream.CopyTo(fs);
+                                    }
+                                    if (WillConfirm)
+                                    {
+                                        Response(context.Response, "DONE", HttpStatusCode.OK);
+                                        return;
+                                    }
+
+                                }
+                                else if (dataType == DataType.Zip)
+                                {
+                                    var final = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+
+                                    using (var fs = File.Create(final))
+                                    {
+                                        context.Request.InputStream.CopyTo(fs);
+                                    }
+                                    if (!Directory.Exists(com)) Directory.CreateDirectory(com);
+                                    ZipFile.ExtractToDirectory(final, com);
+                                    File.Delete(final);
+                                    if (WillConfirm)
+                                    {
+                                        Response(context.Response, "DONE", HttpStatusCode.OK);
+                                        return;
+                                    }
                                 }
                             }
                         }
                         else
                         {
-                            com = Path.Combine(com, name);
-                            if (dataType == DataType.Default)
+                            if (name == null)
                             {
-
+                                Console.WriteLine("Receiving Data");
                                 if (File.Exists(com)) File.Delete(com);
                                 using (var fs = File.Create(com))
                                 {
@@ -188,19 +241,21 @@ namespace LMFS.Core
                                     Response(context.Response, "DONE", HttpStatusCode.OK);
                                     return;
                                 }
-
                             }
-                            else if (dataType == DataType.Zip)
+                            else
                             {
-                                var final = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-
+                                Console.WriteLine("Receiving Named Data");
+                                var final = Path.Combine(com, name);
+                                Console.WriteLine("FINAL:" + final);
+                                if (File.Exists(final))
+                                    File.Delete(final);
                                 using (var fs = File.Create(final))
                                 {
                                     context.Request.InputStream.CopyTo(fs);
+                                    Console.WriteLine("Done...");
                                 }
-                                if (!Directory.Exists(com)) Directory.CreateDirectory(com);
-                                ZipFile.ExtractToDirectory(final, com);
-                                File.Delete(final);
+                                if (WillConfirm)
+                                    Console.WriteLine("Will Confirm");
                                 if (WillConfirm)
                                 {
                                     Response(context.Response, "DONE", HttpStatusCode.OK);
@@ -211,40 +266,8 @@ namespace LMFS.Core
                     }
                     else
                     {
-                        if (name == null)
-                        {
-                            Console.WriteLine("Receiving Data");
-                            if (File.Exists(com)) File.Delete(com);
-                            using (var fs = File.Create(com))
-                            {
-                                context.Request.InputStream.CopyTo(fs);
-                            }
-                            if (WillConfirm)
-                            {
-                                Response(context.Response, "DONE", HttpStatusCode.OK);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("Receiving Named Data");
-                            var final = Path.Combine(com, name);
-                            Console.WriteLine("FINAL:" + final);
-                            if (File.Exists(final))
-                                File.Delete(final);
-                            using (var fs = File.Create(final))
-                            {
-                                context.Request.InputStream.CopyTo(fs);
-                                Console.WriteLine("Done...");
-                            }
-                            if (WillConfirm)
-                                Console.WriteLine("Will Confirm");
-                            if (WillConfirm)
-                            {
-                                Response(context.Response, "DONE", HttpStatusCode.OK);
-                                return;
-                            }
-                        }
+                        Response(context.Response, "AUTH_FAIL", HttpStatusCode.Unauthorized);
+                        return;
                     }
                 }
                 else
@@ -252,11 +275,6 @@ namespace LMFS.Core
                     Response(context.Response, "MISMATCH_MAPPING", HttpStatusCode.NotFound);
                     return;
                 }
-            }
-            else
-            {
-                Response(context.Response, "AUTH_FAIL", HttpStatusCode.Unauthorized);
-                return;
             }
             context.Response.Close();
         }
@@ -268,7 +286,6 @@ namespace LMFS.Core
                 Response(context.Response, "WRONG_QUERY", HttpStatusCode.BadRequest);
                 return;
             }
-            if (Auth(context))
             {
                 __q = __q.Substring(1);
                 HttpQueries httpQueries = HttpQueries.FromString(__q);
@@ -277,35 +294,40 @@ namespace LMFS.Core
                 bool.TryParse(confirm, out bool WillConfirm);
                 if (GetPath(path, out var rel, out var com, out var mpt))
                 {
-                    if (Directory.Exists(com))
+                    if (Auth(context, com))
                     {
-                        Response(context.Response, "ALREADY_EXISTS", HttpStatusCode.OK);
+                        //TODO
+                        if (Directory.Exists(com))
+                        {
+                            Response(context.Response, "ALREADY_EXISTS", HttpStatusCode.OK);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                Directory.CreateDirectory(com);
+                                if (WillConfirm)
+                                    Response(context.Response, $"DONE", HttpStatusCode.OK);
+                            }
+                            catch (Exception e)
+                            {
+                                Response(context.Response, $"CREATION_FAILED\n{e.Message}", HttpStatusCode.Conflict);
+
+                            }
+                        }
                     }
                     else
                     {
-                        try
-                        {
-                            Directory.CreateDirectory(com);
-                            if (WillConfirm)
-                                Response(context.Response, $"DONE", HttpStatusCode.OK);
-                        }
-                        catch (Exception e)
-                        {
-                            Response(context.Response, $"CREATION_FAILED\n{e.Message}", HttpStatusCode.Conflict);
-
-                        }
+                        Response(context.Response, "AUTH_FAIL", HttpStatusCode.Unauthorized);
+                        return;
                     }
+
                 }
                 else
                 {
                     Response(context.Response, "MISMATCH_MAPPING", HttpStatusCode.NotFound);
                     return;
                 }
-            }
-            else
-            {
-                Response(context.Response, "AUTH_FAIL", HttpStatusCode.Unauthorized);
-                return;
             }
             context.Response.Close();
         }
@@ -318,7 +340,7 @@ namespace LMFS.Core
             }
             response.Close();
         }
-        public bool Auth(HttpListenerContext context)
+        public bool Auth(HttpListenerContext context, string path)
         {
             if (configuration.UserAuth == false) return true;
             var auth = context.Request.Cookies["auth"];
@@ -333,7 +355,6 @@ namespace LMFS.Core
                 Response(context.Response, "WRONG_QUERY", HttpStatusCode.BadRequest);
                 return;
             }
-            if (Auth(context))
             {
                 __q = __q.Substring(1);
                 HttpQueries httpQueries = HttpQueries.FromString(__q);
@@ -344,22 +365,30 @@ namespace LMFS.Core
                     Response(context.Response, "WRONG_QUERY", HttpStatusCode.BadRequest);
                     return;
                 }
-                bool.TryParse(confirm, out bool WillConfirm);
+                    bool.TryParse(confirm, out bool WillConfirm);
                 if (GetPath(path, out var rel, out var com, out var mpt))
                 {
-                    if (Directory.Exists(com))
+                    if (Auth(context,com))
                     {
-                        Directory.Delete(com, true);
-                    }
-                    else if (File.Exists(com))
-                    {
-                        File.Delete(com);
+                        if (Directory.Exists(com))
+                        {
+                            Directory.Delete(com, true);
+                        }
+                        else if (File.Exists(com))
+                        {
+                            File.Delete(com);
+                        }
+                        else
+                        {
+                            Response(context.Response, "TARGET_NOT_FOUND", HttpStatusCode.NotFound);
+                            return;
+                        }
                     }
                     else
                     {
-                        Response(context.Response, "TARGET_NOT_FOUND", HttpStatusCode.NotFound);
-                        return;
+                        Response(context.Response, "AUTH_FAIL", HttpStatusCode.Unauthorized);
                     }
+
                 }
                 else
                 {
@@ -371,12 +400,32 @@ namespace LMFS.Core
                     Response(context.Response, "DONE", HttpStatusCode.OK);
                 }
             }
-            else
-            {
-                Response(context.Response, "AUTH_FAIL", HttpStatusCode.Unauthorized);
-            }
         }
-
+        public LMFSFolder GetMappedFolder(string path,out string relative, out string mapped_target)
+        {
+            foreach (var item in configuration.PathMap)
+            {
+                if (path.ToUpper().StartsWith(item.Key.ToUpper()))
+                {
+                    relative = path.Substring(item.Key.Length);
+                    relative = Uri.UnescapeDataString(relative);
+                    mapped_target = item.Value;
+                    var combined = Path.Combine(item.Value, relative);
+                    string d = "";
+                    if (File.Exists(combined))
+                    {
+                        d=(new FileInfo(combined)).Directory.FullName;
+                    }else if (Directory.Exists(combined))
+                    {
+                        d = combined;
+                    }
+                    return LMFSFolder.FromDirectoryPath(d);
+                }
+            }
+            relative = null;
+            mapped_target = null;
+            return null;
+        }
         private bool GetPath(string query_path, out string relative, out string combined, out string mapped_target)
         {
             foreach (var item in configuration.PathMap)
@@ -688,11 +737,8 @@ namespace LMFS.Core
             else
             {
                 query = query.Substring(1);
-
                 var hquery = HttpQueries.FromString(query);
                 var p = hquery.Get("path");
-
-                Trace.WriteLine("Browse:" + p);
                 if (GetPath(p, out var relative, out var abs, out string mapped_target))
                 {
                     if (relative.Contains("/../") || relative.StartsWith("../") || relative.EndsWith("/.."))
