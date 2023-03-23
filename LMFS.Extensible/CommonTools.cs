@@ -8,25 +8,34 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace LMFS.Extensible {
+namespace LMFS.Extensible
+{
 
     [LMFSFunction("cd")]
-    public class ChangeDirectory : FunctionBase {
-        public override void Dispose() {
+    public class ChangeDirectory : FunctionBase
+    {
+        public override void Dispose()
+        {
         }
 
-        public override void Run(params string[] args) {
-            if (args.Length == 0) {
+        public override void Run(params string[] args)
+        {
+            if (args.Length == 0)
+            {
                 LMFSExtensibleEnv.CurrentDirectory = Environment.CurrentDirectory;
             }
-            else {
+            else
+            {
                 var DI = new DirectoryInfo(Path.Combine(LMFSExtensibleEnv.CurrentDirectory, args[0]));
-                if (DI.Exists) {
+                if (DI.Exists)
+                {
                     LMFSExtensibleEnv.CurrentDirectory = DI.FullName;
                 }
-                else if (Directory.Exists(args[0])) {
+                else if (Directory.Exists(args[0]))
+                {
                     DI = new DirectoryInfo(args[0]);
                     LMFSExtensibleEnv.CurrentDirectory = DI.FullName;
                 }
@@ -35,19 +44,26 @@ namespace LMFS.Extensible {
         }
     }
     [LMFSFunction("ls")]
-    public class List : FunctionBase {
-        public override void Dispose() {
+    public class List : FunctionBase
+    {
+        public override void Dispose()
+        {
         }
 
-        public override void Run(params string[] args) {
+        public override void Run(params string[] args)
+        {
             List<string> directories = new List<string>();
             bool IsList = false;
             {
                 var DI = new DirectoryInfo(LMFSExtensibleEnv.CurrentDirectory);
-                foreach (var item in args) {
-                    if (item.StartsWith('-')) {
-                        foreach (var _switch in item) {
-                            switch (_switch) {
+                foreach (var item in args)
+                {
+                    if (item.StartsWith('-'))
+                    {
+                        foreach (var _switch in item)
+                        {
+                            switch (_switch)
+                            {
                                 case 'l':
                                     IsList = true;
                                     break;
@@ -56,46 +72,58 @@ namespace LMFS.Extensible {
                             }
                         }
                     }
-                    else {
+                    else
+                    {
                         var _DI = new DirectoryInfo(Path.Combine(LMFSExtensibleEnv.CurrentDirectory, item));
-                        if (_DI.Exists) {
+                        if (_DI.Exists)
+                        {
                             LMFSExtensibleEnv.CurrentDirectory = _DI.FullName;
                             directories.Add(_DI.FullName);
                         }
-                        else if (Directory.Exists(args[0])) {
+                        else if (Directory.Exists(args[0]))
+                        {
                             _DI = new DirectoryInfo(args[0]);
                             LMFSExtensibleEnv.CurrentDirectory = _DI.FullName;
                             directories.Add(_DI.FullName);
                         }
-                        else {
+                        else
+                        {
                             LMFSConsole.STDOUT.WriteLine($"{item} is not a directory or not found.");
                         }
                     }
                 }
-                if (directories.Count == 0) {
+                if (directories.Count == 0)
+                {
                     directories.Add(DI.FullName);
                 }
             }
             {
-                foreach (var d in directories) {
+                foreach (var d in directories)
+                {
                     DirectoryInfo DI = new DirectoryInfo(d);
                     LMFSConsole.STDOUT.WriteLine($"{DI.FullName}:");
-                    foreach (var item in DI.EnumerateDirectories()) {
-                        if (IsList) {
+                    foreach (var item in DI.EnumerateDirectories())
+                    {
+                        if (IsList)
+                        {
                             LMFSConsole.STDOUT.WriteLine($"dwru\t{item.LastWriteTime}\t" + item.Name + "/");
                         }
-                        else {
+                        else
+                        {
                             LMFSConsole.STDOUT.Write(item.Name);
                             LMFSConsole.STDOUT.Write("\t");
 
                         }
                     }
-                    foreach (var item in DI.EnumerateFiles()) {
-                        if (IsList) {
+                    foreach (var item in DI.EnumerateFiles())
+                    {
+                        if (IsList)
+                        {
                             LMFSConsole.STDOUT.WriteLine($"dwru\t{item.LastWriteTime}\t" + item.Name);
                             //LMFSConsole.STDOUT.WriteLine(item.Name);
                         }
-                        else {
+                        else
+                        {
                             LMFSConsole.STDOUT.Write(item.Name);
                             LMFSConsole.STDOUT.Write("\t");
 
@@ -107,74 +135,169 @@ namespace LMFS.Extensible {
         }
     }
     [LMFSFunction("clear")]
-    public class Clear : FunctionBase {
-        public override void Dispose() {
+    public class Clear : FunctionBase
+    {
+        public override void Dispose()
+        {
         }
 
-        public override void Run(params string[] args) {
+        public override void Run(params string[] args)
+        {
             LMFSConsole.STDOUT.Write("\u001b[2J");
             LMFSConsole.STDOUT.Write("\u001b[100A");
         }
     }
 
     [LMFSFunction("cat")]
-    public class ViewFile : FunctionBase {
-        public override void Dispose() {
+    public class ViewFile : FunctionBase
+    {
+        public override void Dispose()
+        {
         }
 
-        public override void Run(params string[] args) {
-            foreach (var item in args) {
+        public override void Run(params string[] args)
+        {
+            foreach (var item in args)
+            {
                 LMFSConsole.STDOUT.WriteLine(File.ReadAllText(Path.Combine(LMFSExtensibleEnv.CurrentDirectory, item)));
             }
         }
     }
     [LMFSFunction("export")]
-    public class Export : FunctionBase {
-        public override void Dispose() {
+    public class Export : FunctionBase
+    {
+        public override void Dispose()
+        {
         }
 
-        public override void Run(params string[] args) {
-            if (args.Length == 0) {
-                foreach (DictionaryEntry item in LMFSExtensibleEnv.Environments) {
+        public override void Run(params string[] args)
+        {
+            if (args.Length == 0)
+            {
+                foreach (DictionaryEntry item in LMFSExtensibleEnv.Environments)
+                {
 
                     LMFSConsole.STDOUT.WriteLine($"{item.Key}={item.Value}");
                 }
             }
-            else {
-                for (int i = 0; i < args.Length; i++) {
+            else
+            {
+                for (int i = 0; i < args.Length; i++)
+                {
                     var item = args[i];
-                    if (item.StartsWith('-')) {
+                    if (item.StartsWith('-'))
+                    {
 
                     }
-                    else {
+                    else
+                    {
                     }
                 }
             }
         }
     }
     [LMFSFunction("echo")]
-    public class Echo : FunctionBase {
-        public override void Dispose() {
+    public class Echo : FunctionBase
+    {
+        public override void Dispose()
+        {
         }
 
-        public override void Run(params string[] args) {
-            foreach (var item in args) {
+        public override void Run(params string[] args)
+        {
+            foreach (var item in args)
+            {
 
                 LMFSConsole.STDOUT.Write(String.Join(' ', item));
             }
             LMFSConsole.STDOUT.WriteLine();
         }
     }
+    [LMFSFunction("grep")]
+    public class Grep : FunctionBase
+    {
+        public override void Dispose()
+        {
+        }
+        public void Process(TextReader textReader, List<string> regex)
+        {
+            while (true)
+            {
+                var str=textReader.ReadLine();
+                if (str == null) return;
+                bool isMatch=true;
+                foreach (var item in regex)
+                {
+                    isMatch&=Regex.IsMatch(str, item);
+                }
+                if (isMatch)
+                {
+                    //Console.WriteLine(str);
+                    LMFSConsole.STDOUT.WriteLine(str);
+                }
+            }
+
+        }
+        public override void Run(params string[] args)
+        {
+            //Console.Write(LMFSConsole.STDIN.GetType().Name);    
+            //Console.Write((LMFSConsole.STDIN as RoutedReader).UnderlyingReader.GetType().Name);    
+            List<string> files = new List<string>();
+            List<string> regex = new List<string>();
+            foreach (var item in args)
+            {
+                if (item.StartsWith("-"))
+                {
+
+                }
+                else
+                {
+                    var file = Path.Combine(LMFSExtensibleEnv.CurrentDirectory, item);
+                    if (File.Exists(file))
+                    {
+                        files.Add(file);
+
+                    }
+                    else
+                    {
+                        regex.Add(item);
+                    }
+                }
+            }
+            if(files.Count > 0)
+            {
+                foreach (var f in files)
+                {
+                    using (var reader=File.OpenRead(f))
+                    {
+                        using (TextReader tr=new StreamReader(reader))
+                        {
+                            Process(tr, regex);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Process(LMFSConsole.STDIN, regex);
+            }
+
+        }
+    }
 
     [LMFSFunction("exec")]
-    public class Exec : FunctionBase {
-        public override void Dispose() {
+    public class Exec : FunctionBase
+    {
+        public override void Dispose()
+        {
         }
 
-        public override void Run(params string[] args) {
+        public override void Run(params string[] args)
+        {
             ProcessStartInfo processStartInfo = new ProcessStartInfo(args[0]);
             string _args = "";
-            for (int i = 1; i < args.Length; i++) {
+            for (int i = 1; i < args.Length; i++)
+            {
                 _args += args[i];
                 _args += " ";
             }
@@ -185,10 +308,13 @@ namespace LMFS.Extensible {
             //processStartInfo.standard
             var p = Process.Start(processStartInfo);
             //p.OutputDataReceived += (sender, args) => { LMFSConsole.STDOUT.WriteLine(args.Data); };
-            Task.Run(() => {
-                while (true) {
+            Task.Run(() =>
+            {
+                while (true)
+                {
                     var l = p.StandardOutput.ReadLine();
-                    if (l != null) {
+                    if (l != null)
+                    {
                         LMFSConsole.STDOUT.WriteLine(l);
                     }
                     else break;
