@@ -5,11 +5,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace LMFS.Extensible
 {
@@ -213,115 +210,56 @@ namespace LMFS.Extensible
             LMFSConsole.STDOUT.WriteLine();
         }
     }
-    [LMFSFunction("grep")]
-    public class Grep : FunctionBase
+
+    [LMFSFunction("rm")]
+    public class Remove:FunctionBase
     {
         public override void Dispose()
         {
         }
-        public void Process(TextReader textReader, List<string> regex)
-        {
-            while (true)
-            {
-                var str=textReader.ReadLine();
-                if (str == null) return;
-                bool isMatch=true;
-                foreach (var item in regex)
-                {
-                    isMatch&=Regex.IsMatch(str, item);
-                }
-                if (isMatch)
-                {
-                    //Console.WriteLine(str);
-                    LMFSConsole.STDOUT.WriteLine(str);
-                }
-            }
-
-        }
         public override void Run(params string[] args)
         {
-            //Console.Write(LMFSConsole.STDIN.GetType().Name);    
-            //Console.Write((LMFSConsole.STDIN as RoutedReader).UnderlyingReader.GetType().Name);    
-            List<string> files = new List<string>();
-            List<string> regex = new List<string>();
-            foreach (var item in args)
+            bool Recursive=false;
+            List<string> input = new List<string>();
+            for (int i = 0; i < args.Length; i++)
             {
+                var item = args[i];
                 if (item.StartsWith("-"))
                 {
-
-                }
-                else
-                {
-                    var file = Path.Combine(LMFSExtensibleEnv.CurrentDirectory, item);
-                    if (File.Exists(file))
+                    foreach (var c in item)
                     {
-                        files.Add(file);
-
-                    }
-                    else
-                    {
-                        regex.Add(item);
-                    }
-                }
-            }
-            if(files.Count > 0)
-            {
-                foreach (var f in files)
-                {
-                    using (var reader=File.OpenRead(f))
-                    {
-                        using (TextReader tr=new StreamReader(reader))
+                        switch (c)
                         {
-                            Process(tr, regex);
+                            case 'r':
+                                Recursive = true; 
+                                break;
+                            default:
+                                break;
                         }
                     }
                 }
-            }
-            else
-            {
-                Process(LMFSConsole.STDIN, regex);
-            }
-
-        }
-    }
-
-    [LMFSFunction("exec")]
-    public class Exec : FunctionBase
-    {
-        public override void Dispose()
-        {
-        }
-
-        public override void Run(params string[] args)
-        {
-            ProcessStartInfo processStartInfo = new ProcessStartInfo(args[0]);
-            string _args = "";
-            for (int i = 1; i < args.Length; i++)
-            {
-                _args += args[i];
-                _args += " ";
-            }
-            processStartInfo.Arguments = _args;
-            processStartInfo.RedirectStandardInput = true;
-            processStartInfo.RedirectStandardOutput = true;
-            processStartInfo.WorkingDirectory = LMFSExtensibleEnv.CurrentDirectory;
-            //processStartInfo.standard
-            var p = Process.Start(processStartInfo);
-            //p.OutputDataReceived += (sender, args) => { LMFSConsole.STDOUT.WriteLine(args.Data); };
-            Task.Run(() =>
-            {
-                while (true)
+                else
                 {
-                    var l = p.StandardOutput.ReadLine();
-                    if (l != null)
-                    {
-                        LMFSConsole.STDOUT.WriteLine(l);
-                    }
-                    else break;
+                    input.Add(item);
                 }
-            });
-            p.WaitForExit();
+            }
+            foreach (var item in input)
+            {
+                var l=Path.Combine(LMFSExtensibleEnv.CurrentDirectory, item);
+                if (Directory.Exists(l))
+                {
+                    Directory.Delete(l, Recursive);
+                }else if (Directory.Exists(item))
+                {
+                    Directory.Delete(item, Recursive);
+                }else if (File.Exists(l))
+                {
+                    File.Delete(l);
+                }else if(File.Exists(item))
+                {
+                    File.Delete(item);
+                }
+            }
         }
     }
-
 }
