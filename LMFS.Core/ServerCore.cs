@@ -365,10 +365,10 @@ namespace LMFS.Core
                     Response(context.Response, "WRONG_QUERY", HttpStatusCode.BadRequest);
                     return;
                 }
-                    bool.TryParse(confirm, out bool WillConfirm);
+                bool.TryParse(confirm, out bool WillConfirm);
                 if (GetPath(path, out var rel, out var com, out var mpt))
                 {
-                    if (Auth(context,com))
+                    if (Auth(context, com))
                     {
                         if (Directory.Exists(com))
                         {
@@ -401,7 +401,7 @@ namespace LMFS.Core
                 }
             }
         }
-        public LMFSFolder GetMappedFolder(string path,out string relative, out string mapped_target)
+        public LMFSFolder GetMappedFolder(string path, out string relative, out string mapped_target)
         {
             foreach (var item in configuration.PathMap)
             {
@@ -414,8 +414,9 @@ namespace LMFS.Core
                     string d = "";
                     if (File.Exists(combined))
                     {
-                        d=(new FileInfo(combined)).Directory.FullName;
-                    }else if (Directory.Exists(combined))
+                        d = (new FileInfo(combined)).Directory.FullName;
+                    }
+                    else if (Directory.Exists(combined))
                     {
                         d = combined;
                     }
@@ -479,11 +480,13 @@ namespace LMFS.Core
                         if (date != null)
                         {
                             Directory.SetLastWriteTime(combined, date.Value);
+                            Response(context.Response, "OK", HttpStatusCode.OK);
                         }
                     }
                     else if (File.Exists(combined))
                     {
                         File.SetLastWriteTime(combined, date.Value);
+                        Response(context.Response, "OK", HttpStatusCode.OK);
                     }
                     else
                     {

@@ -7,6 +7,7 @@
         public bool PreserveDeletedFolders;
         public bool PreserveDeletedFiles;
         public bool UseZip;
+        public SyncMethod SyncMethod= SyncMethod.Full;
         public static Arguments FromArgs(string[] args) {
             Arguments arguments = new Arguments();
             int ParaMode = 0;
@@ -52,6 +53,18 @@
                     case "-p":
                     case "-path":
                         ParaMode = 1;
+                        break;
+                    case "-dt":
+                    case "--diff-time":
+                        arguments.SyncMethod = SyncMethod.TimeDiff;
+                        break;
+                    case "-dh":
+                    case "--diff-hash":
+                        arguments.SyncMethod = SyncMethod.HashDiff;
+                        break;
+                    case "-f":
+                    case "--full":
+                        arguments.SyncMethod = SyncMethod.Full;
                         break;
                     default:
                         switch (ParaMode) {

@@ -66,6 +66,69 @@ namespace LMFS.CLI {
             string s = _t.Result;
             return s;
         }
+        public string SetRemoteWriteTime(string path, string source)
+        {
+            var f = new FileInfo(source);
+            HttpQueries httpQueries = new HttpQueries();
+            httpQueries.Set("path", path);
+            httpQueries.Set("time", f.LastWriteTimeUtc.ToBinary().ToString());
+
+            var _uri = new Uri(uri, "set?" + httpQueries.ToString());
+            Task<HttpResponseMessage> task = httpClient.GetAsync(_uri);
+            task.Wait();
+            HttpResponseMessage _a = task.Result;
+            Task<string> _t = _a.Content.ReadAsStringAsync();
+            _t.Wait();
+            string s = _t.Result;
+            return s;
+        }
+        public bool SetLocalWriteTime(string path, string source, out string response)
+        {
+            var f = new FileInfo(source);
+            HttpQueries httpQueries = new HttpQueries();
+            httpQueries.Set("path", path);
+            httpQueries.Set("type", DataType.WriteTime.ToString());
+
+            var _uri = new Uri(uri, "get?" + httpQueries.ToString());
+            Task<HttpResponseMessage> task = httpClient.GetAsync(_uri);
+            task.Wait();
+            HttpResponseMessage _a = task.Result;
+            Task<string> _t = _a.Content.ReadAsStringAsync();
+            _t.Wait();
+            string s = _t.Result;
+            if (long.TryParse(s, out var dts))
+            {
+                DateTime dateTime = new DateTime(dts);
+                f.LastWriteTimeUtc = dateTime;
+                response = s;
+                return true;
+            }
+            response = s;
+            return false;
+        }
+        public DateTime? GetRemoteWriteTime(string path, out string response)
+        {
+            //var f = new FileInfo(source);
+            HttpQueries httpQueries = new HttpQueries();
+            httpQueries.Set("path", path);
+            httpQueries.Set("type", DataType.WriteTime.ToString());
+
+            var _uri = new Uri(uri, "get?" + httpQueries.ToString());
+            Task<HttpResponseMessage> task = httpClient.GetAsync(_uri);
+            task.Wait();
+            HttpResponseMessage _a = task.Result;
+            Task<string> _t = _a.Content.ReadAsStringAsync();
+            _t.Wait();
+            string s = _t.Result;
+            if (long.TryParse(s, out var dts))
+            {
+                DateTime dateTime = new DateTime(dts);
+                response = s;
+                return dateTime;
+            }
+            response = s;
+            return null;
+        }
         public string Push(string path, string source) {
             var f = new FileInfo(source);
             HttpQueries httpQueries = new HttpQueries();
