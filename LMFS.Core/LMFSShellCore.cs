@@ -163,6 +163,14 @@ namespace LMFS.Server.Core
                 {
                     return;
                 }
+                else if (line == "help") {
+                    foreach (var item in functions)
+                    {
+                        Console.Write(item.Key);
+                        Console.Write("\t");
+                    }
+                    Console.WriteLine();
+                }
                 else
                 {
                     Execute(line);

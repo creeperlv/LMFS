@@ -13,12 +13,13 @@ namespace LMFS.Core
 {
     public class ServerCore
     {
+        public static ServerCore CurrentCore;
         HttpListener HttpListener;
         ServerConfiguration configuration;
         ContentGenerator contGen = null;
         MIMEMap mime_map;
-        UserBase UserBase = null;
-        AuthBase AuthBase = null;
+        internal UserBase UserBase = null;
+        internal AuthBase AuthBase = null;
         public void LoadTemplate()
         {
             if (contGen != null)
@@ -27,6 +28,7 @@ namespace LMFS.Core
 
         public ServerCore(ServerConfiguration configuration)
         {
+            CurrentCore = this;
             HttpListener = new HttpListener();
             this.configuration = configuration;
             contGen = new ContentGenerator();
