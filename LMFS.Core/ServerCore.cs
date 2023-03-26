@@ -472,31 +472,46 @@ namespace LMFS.Core
                         }
                     }
                 }
-                if (GetPath(_path, out var relative, out var combined, out var root))
                 {
-                    if (Directory.Exists(combined))
+                    var Folder=GetMappedFolder(_path,out var relative, out var root);
+                    if(Folder != null)
                     {
-                        if (date != null)
-                        {
-                            Directory.SetLastWriteTime(combined, date.Value);
-                            Response(context.Response, "OK", HttpStatusCode.OK);
-                        }
-                    }
-                    else if (File.Exists(combined))
-                    {
-                        File.SetLastWriteTime(combined, date.Value);
-                        Response(context.Response, "OK", HttpStatusCode.OK);
+
                     }
                     else
                     {
-                        Response(context.Response, "RESOURCE_NOT_FOUND", HttpStatusCode.NotFound);
+                        Response(context.Response, "MISMATCH_MAPPING", HttpStatusCode.NotFound);
                         return;
                     }
                 }
-                else
+                if(false)
                 {
-                    Response(context.Response, "MISMATCH_MAPPING", HttpStatusCode.NotFound);
-                    return;
+                    if (GetPath(_path, out var relative, out var combined, out var root))
+                    {
+                        if (Directory.Exists(combined))
+                        {
+                            if (date != null)
+                            {
+                                Directory.SetLastWriteTime(combined, date.Value);
+                                Response(context.Response, "OK", HttpStatusCode.OK);
+                            }
+                        }
+                        else if (File.Exists(combined))
+                        {
+                            File.SetLastWriteTime(combined, date.Value);
+                            Response(context.Response, "OK", HttpStatusCode.OK);
+                        }
+                        else
+                        {
+                            Response(context.Response, "RESOURCE_NOT_FOUND", HttpStatusCode.NotFound);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        Response(context.Response, "MISMATCH_MAPPING", HttpStatusCode.NotFound);
+                        return;
+                    }
                 }
             }
         }
@@ -512,7 +527,6 @@ namespace LMFS.Core
             {
                 query = query.Substring(1);
                 HttpQueries httpQueries = HttpQueries.FromString(query);
-                var queries = query.Split('&');
                 var _path = httpQueries.Get("path");
                 DataType responseType = DataType.Default;
                 {
