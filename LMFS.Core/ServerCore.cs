@@ -403,6 +403,13 @@ namespace LMFS.Core
                 }
             }
         }
+        /// <summary>
+        /// THE ROOT FOLDER
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="relative"></param>
+        /// <param name="mapped_target"></param>
+        /// <returns></returns>
         public LMFSFolder GetMappedFolder(string path, out string relative, out string mapped_target)
         {
             foreach (var item in configuration.PathMap)
@@ -412,17 +419,7 @@ namespace LMFS.Core
                     relative = path.Substring(item.Key.Length);
                     relative = Uri.UnescapeDataString(relative);
                     mapped_target = item.Value;
-                    var combined = Path.Combine(item.Value, relative);
-                    string d = "";
-                    if (File.Exists(combined))
-                    {
-                        d = (new FileInfo(combined)).Directory.FullName;
-                    }
-                    else if (Directory.Exists(combined))
-                    {
-                        d = combined;
-                    }
-                    return LMFSFolder.FromDirectoryPath(d);
+                    return LMFSFolder.FromDirectoryPath(item.Value);
                 }
             }
             relative = null;
@@ -526,76 +523,151 @@ namespace LMFS.Core
                         responseType = Enum.Parse<DataType>(rt);
                     }
                 }
-                if (GetPath(_path, out var relative, out var combined, out var root))
                 {
-                    if (Directory.Exists(combined))
-                    {
 
-                        switch (responseType)
-                        {
-                            case DataType.Default:
-                                {
-                                    //Send back list.
-                                    DirectoryInfo directoryInfo = new DirectoryInfo(combined);
-                                    StringBuilder sb = new StringBuilder();
-                                    foreach (var item in directoryInfo.EnumerateDirectories())
-                                    {
-                                        sb.Append("DIR:");
-                                        sb.Append(item.Name);
-                                        sb.Append('\n');
-                                    }
-                                    foreach (var item in directoryInfo.EnumerateFiles())
-                                    {
-                                        sb.Append("FLE:");
-                                        sb.Append(item.Name);
-                                        sb.Append('\n');
-                                    }
-                                    Response(context.Response, sb.ToString(), HttpStatusCode.OK);
-                                    //context.Response.Close();
-                                }
-                                break;
-                            case DataType.Zip:
-                                break;
-                            case DataType.WriteTime:
-                                {
-                                    Response(context.Response, Directory.GetLastWriteTimeUtc(combined).ToBinary().ToString(), HttpStatusCode.NotFound);
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    else if (File.Exists(combined))
+                    var Folder = GetMappedFolder(_path, out var relative, out var root);
+                    if (Folder != null)
                     {
-                        if (responseType == DataType.Default)
+                        if (Folder.IsDirExist(relative))
                         {
-                            using (var fs = File.OpenRead(combined))
+
+                            switch (responseType)
                             {
-                                fs.CopyTo(context.Response.OutputStream);
+                                case DataType.Default:
+                                    {
+                                        //Send back list.
+                                        var dir=Folder.GetSubFolder(relative);
+                                        StringBuilder sb = new StringBuilder();
+                                        foreach (var item in dir.GetFolders())
+                                        {
+                                            sb.Append("DIR:");
+                                            sb.Append(item.Name);
+                                            sb.Append('\n');
+                                        }
+                                        foreach (var item in dir.GetFiles())
+                                        {
+                                            sb.Append("FLE:");
+                                            sb.Append(item.Name);
+                                            sb.Append('\n');
+                                        }
+                                        Response(context.Response, sb.ToString(), HttpStatusCode.OK);
+                                        //context.Response.Close();
+                                    }
+                                    break;
+                                case DataType.Zip:
+                                    break;
+                                case DataType.WriteTime:
+                                    {
+                                        var dir = Folder.GetSubFolder(relative);
+                                        Response(context.Response, Directory.GetLastWriteTimeUtc(dir.Folder.FullName).ToBinary().ToString(), HttpStatusCode.NotFound);
+                                    }
+                                    break;
+                                default:
+                                    break;
                             }
-                            context.Response.Close();
                         }
-                        else if (responseType == DataType.Hash)
+                        else if (Folder.IsFileExist(relative))
                         {
-                            Response(context.Response, File.ReadAllBytes(combined).HashString(), HttpStatusCode.NotFound);
+                            var file=Folder.SubGetFile(relative);
+                            if (responseType == DataType.Default)
+                            {
+                                using (var fs = file.OpenRead())
+                                {
+                                    fs.CopyTo(context.Response.OutputStream);
+                                }
+                                context.Response.Close();
+                            }
+                            else if (responseType == DataType.Hash)
+                            {
+                                Response(context.Response, File.ReadAllBytes(file.FullName).HashString(), HttpStatusCode.NotFound);
 
-                        }
-                        else if (responseType == DataType.WriteTime)
-                        {
-                            Response(context.Response, File.GetLastWriteTimeUtc(combined).ToBinary().ToString(), HttpStatusCode.NotFound);
+                            }
+                            else if (responseType == DataType.WriteTime)
+                            {
+                                Response(context.Response, File.GetLastWriteTimeUtc(file.FullName).ToBinary().ToString(), HttpStatusCode.NotFound);
 
+                            }
                         }
                     }
                     else
                     {
-                        Response(context.Response, "RESOURCE_NOT_FOUND", HttpStatusCode.NotFound);
+                        Response(context.Response, "MISMATCH_MAPPING", HttpStatusCode.NotFound);
                         return;
                     }
                 }
-                else
+                if(false)
                 {
-                    Response(context.Response, "MISMATCH_MAPPING", HttpStatusCode.NotFound);
-                    return;
+                    if (GetPath(_path, out var relative, out var combined, out var root))
+                    {
+                        if (Directory.Exists(combined))
+                        {
+
+                            switch (responseType)
+                            {
+                                case DataType.Default:
+                                    {
+                                        //Send back list.
+                                        DirectoryInfo directoryInfo = new DirectoryInfo(combined);
+                                        StringBuilder sb = new StringBuilder();
+                                        foreach (var item in directoryInfo.EnumerateDirectories())
+                                        {
+                                            sb.Append("DIR:");
+                                            sb.Append(item.Name);
+                                            sb.Append('\n');
+                                        }
+                                        foreach (var item in directoryInfo.EnumerateFiles())
+                                        {
+                                            sb.Append("FLE:");
+                                            sb.Append(item.Name);
+                                            sb.Append('\n');
+                                        }
+                                        Response(context.Response, sb.ToString(), HttpStatusCode.OK);
+                                        //context.Response.Close();
+                                    }
+                                    break;
+                                case DataType.Zip:
+                                    break;
+                                case DataType.WriteTime:
+                                    {
+                                        Response(context.Response, Directory.GetLastWriteTimeUtc(combined).ToBinary().ToString(), HttpStatusCode.NotFound);
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        else if (File.Exists(combined))
+                        {
+                            if (responseType == DataType.Default)
+                            {
+                                using (var fs = File.OpenRead(combined))
+                                {
+                                    fs.CopyTo(context.Response.OutputStream);
+                                }
+                                context.Response.Close();
+                            }
+                            else if (responseType == DataType.Hash)
+                            {
+                                Response(context.Response, File.ReadAllBytes(combined).HashString(), HttpStatusCode.NotFound);
+
+                            }
+                            else if (responseType == DataType.WriteTime)
+                            {
+                                Response(context.Response, File.GetLastWriteTimeUtc(combined).ToBinary().ToString(), HttpStatusCode.NotFound);
+
+                            }
+                        }
+                        else
+                        {
+                            Response(context.Response, "RESOURCE_NOT_FOUND", HttpStatusCode.NotFound);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        Response(context.Response, "MISMATCH_MAPPING", HttpStatusCode.NotFound);
+                        return;
+                    }
                 }
             }
         }

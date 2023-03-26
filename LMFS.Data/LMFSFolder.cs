@@ -1,37 +1,67 @@
 ﻿using Ignore;
 using Newtonsoft.Json;
 
-namespace LMFS.Data {
+namespace LMFS.Data
+{
     /// <summary>
     /// .lmfs.folder
     /// </summary>
     [Serializable]
-    public class LMFSFolder {
+    public class LMFSFolder
+    {
         public bool UseGitIgnore;
         [NonSerialized]
         public DirectoryInfo Folder;
         RuntimeIgnore? GitIgnore = null;
-        public static LMFSFolder? FromDirectoryPath(string path) {
+
+        public string Name { get=>Folder.Name; }
+
+        public bool IsDirExist(string path)
+        {
+            return Directory.Exists(Path.Combine(Folder.FullName, path));
+        }
+        public bool IsFileExist(string path)
+        {
+            return File.Exists(Path.Combine(Folder.FullName, path));
+        }
+        public FileInfo SubGetFile(string path)
+        {
+            return new FileInfo(Path.Combine(Folder.FullName, (path)));
+        }
+        public LMFSFolder? GetSubFolder(string path)
+        {
+            return FromDirectoryPath(Path.Combine(Folder.FullName, path));
+        }
+        public static LMFSFolder? FromDirectoryPath(string path)
+        {
             var lmfsFolder = new LMFSFolder { Folder = new DirectoryInfo(path) };
-            if (Directory.Exists(path)) {
+            if (Directory.Exists(path))
+            {
                 return lmfsFolder;
             }
-            else {
+            else
+            {
                 var p = Path.Combine(path, ".lmfs.folder");
-                if (File.Exists(p)) {
+                if (File.Exists(p))
+                {
                     return FromConfig(new FileInfo(p)) ?? lmfsFolder;
                 }
             }
             return null;
         }
-        public List<LMFSFolder> GetFolders() {
+        public List<LMFSFolder> GetFolders()
+        {
             var f = Folder.GetDirectories();
             List<LMFSFolder> lMFSFolders = new List<LMFSFolder>();
-            foreach (var item in f) {
-                if (UseGitIgnore) {
-                    if (GitIgnore != null) {
+            foreach (var item in f)
+            {
+                if (UseGitIgnore)
+                {
+                    if (GitIgnore != null)
+                    {
                         var rp = Path.GetRelativePath(GitIgnore.BasePath, item.FullName);
-                        if (GitIgnore.Ignore.IsIgnored(rp)) {
+                        if (GitIgnore.Ignore.IsIgnored(rp))
+                        {
                             continue;
                         }
                     }
@@ -40,14 +70,19 @@ namespace LMFS.Data {
             }
             return lMFSFolders;
         }
-        public List<FileInfo> GetFiles() {
+        public List<FileInfo> GetFiles()
+        {
             var f = Folder.GetFiles();
             List<FileInfo> lMFSFolders = new List<FileInfo>();
-            foreach (var item in f) {
-                if (UseGitIgnore) {
-                    if (GitIgnore != null) {
+            foreach (var item in f)
+            {
+                if (UseGitIgnore)
+                {
+                    if (GitIgnore != null)
+                    {
                         var rp = Path.GetRelativePath(GitIgnore.BasePath, item.FullName);
-                        if (GitIgnore.Ignore.IsIgnored(rp)) {
+                        if (GitIgnore.Ignore.IsIgnored(rp))
+                        {
                             continue;
                         }
                     }
@@ -56,12 +91,15 @@ namespace LMFS.Data {
             }
             return lMFSFolders;
         }
-        public static LMFSFolder? FromConfig(FileInfo config) {
+        public static LMFSFolder? FromConfig(FileInfo config)
+        {
             LMFSFolder? result = JsonConvert.DeserializeObject<LMFSFolder>(File.ReadAllText(config.FullName));
             if (result == null) { return result; }
             var d = config.Directory;
-            if (d != null) {
-                if (result.UseGitIgnore) {
+            if (d != null)
+            {
+                if (result.UseGitIgnore)
+                {
                     var ignore_path = Path.Combine(d.FullName, ".gitignore");
                     if (File.Exists(ignore_path))
                         result.GitIgnore = RuntimeIgnore.FromGitIgnore(ignore_path, d);
@@ -72,12 +110,15 @@ namespace LMFS.Data {
             return null;
         }
     }
-    public class RuntimeIgnore {
+    public class RuntimeIgnore
+    {
         public Ignore.Ignore Ignore;
         public string BasePath;
-        public static RuntimeIgnore FromGitIgnore(string gitignore, DirectoryInfo Base) {
+        public static RuntimeIgnore FromGitIgnore(string gitignore, DirectoryInfo Base)
+        {
             var l = File.ReadAllLines(gitignore).ToList();
-            l.RemoveAll((x) => {
+            l.RemoveAll((x) =>
+            {
                 var a = x.Trim();
                 if (a == "") return true;
                 if (a.StartsWith("#")) return true;
