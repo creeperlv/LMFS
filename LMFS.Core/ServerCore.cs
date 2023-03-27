@@ -1,6 +1,7 @@
 ﻿using LMFS.Data;
 using LMFS.Data.Utilities;
 using LMFS.Exchange.Core;
+using LMFS.Exchange.Core.FileSystem;
 using LMFS.Server.Core.Auth;
 using Newtonsoft.Json;
 using System.Diagnostics;
@@ -410,7 +411,7 @@ namespace LMFS.Core
         /// <param name="relative"></param>
         /// <param name="mapped_target"></param>
         /// <returns></returns>
-        public LMFSFolder GetMappedFolder(string path, out string relative, out string mapped_target)
+        public LMFSFSFolder GetMappedFolder(string path, out string relative, out string mapped_target)
         {
             foreach (var item in configuration.PathMap)
             {
@@ -419,7 +420,7 @@ namespace LMFS.Core
                     relative = path.Substring(item.Key.Length);
                     relative = Uri.UnescapeDataString(relative);
                     mapped_target = item.Value;
-                    return LMFSFolder.FromDirectoryPath(item.Value);
+                    return new LMFSFSFolder(item.Value);
                 }
             }
             relative = null;
@@ -550,7 +551,11 @@ namespace LMFS.Core
                                 case DataType.Default:
                                     {
                                         //Send back list.
-                                        var dir=Folder.GetSubFolder(relative);
+                                        var code=Folder.GetFolder(relative, out var dir);
+                                        if (code== LMFSFSFolderGetCode.done)
+                                        {
+
+                                        }
                                         StringBuilder sb = new StringBuilder();
                                         foreach (var item in dir.GetFolders())
                                         {
@@ -572,8 +577,8 @@ namespace LMFS.Core
                                     break;
                                 case DataType.WriteTime:
                                     {
-                                        var dir = Folder.GetSubFolder(relative);
-                                        Response(context.Response, Directory.GetLastWriteTimeUtc(dir.Folder.FullName).ToBinary().ToString(), HttpStatusCode.NotFound);
+                                        var dir = Folder.GetFolder(relative, out var _f);
+                                        Response(context.Response, Directory.GetLastWriteTimeUtc(_f.folder.Folder.FullName).ToBinary().ToString(), HttpStatusCode.NotFound);
                                     }
                                     break;
                                 default:
