@@ -3,10 +3,9 @@ using Newtonsoft.Json;
 
 namespace LMFS.Exchange.Core.FileSystem
 {
-    public class LMFSFSFolder
+    public class LMFSFSFolder : LMFSFSItem
     {
         public LMFSFolder folder;
-        public ItemAttr Attribute;
         public string Name => folder.Name;
         public bool IsDirExist(string path)
         {
@@ -30,10 +29,13 @@ namespace LMFS.Exchange.Core.FileSystem
             var __attr = JsonConvert.DeserializeObject<ItemAttr>(File.ReadAllText(Path.Combine(this.folder.Folder.FullName, ".lmfs-folder-attr")));
             if (__attr != null) Attribute = __attr;
         }
+        public LMFSFSFile SubGetFile(string path)
+        {
+            return folder.SubGetFile(path);
+        }
         public LMFSFSFolderGetCode GetFolder(string relative_path, out LMFSFSFolder folder)
         {
-
-            folder = null;
+            folder = this.folder.GetSubFolder(relative_path);
             return LMFSFSFolderGetCode.not_found;
         }
 
@@ -43,7 +45,7 @@ namespace LMFS.Exchange.Core.FileSystem
         }
         public List<LMFSFSFile> GetFiles()
         {
-            return folder.GetFiles().Cast<LMFSFSFile>().ToList() ;
+            return folder.GetFiles().Cast<LMFSFSFile>().ToList();
         }
         public static implicit operator LMFSFSFolder(LMFSFolder folder)
         {

@@ -1,8 +1,8 @@
 ﻿namespace LMFS.Exchange.Core.FileSystem
 {
-    public class LMFSFSFile {
+    public class LMFSFSFile : LMFSFSItem
+    {
         public FileInfo file;
-        public ItemAttr Attribute;
         public LMFSFSFile(FileInfo fileInfo)
         {
             this.file = fileInfo;
@@ -14,5 +14,10 @@
         {
             return new LMFSFSFile(fi);
         }
+    }
+    public class LMFSFSItem
+    {
+        public ItemAttr Attribute;
+        public LMFSFSItem Parent;
     }
 }

@@ -86,11 +86,15 @@ namespace LMFS.Core
             Trace.WriteLine($"[{DateTime.UtcNow}]Url:{path}");
             if (path.StartsWith("/browse"))
             {
-                Browse(context);
+                if (configuration.EnableBrowse)
+                    Browse(context);
+                else Response(context.Response, "<html><body><h1>Feature Disabled</h1></body></html>", HttpStatusCode.Locked);
             }
             else if (path.StartsWith("/dump"))
             {
-                Dump(context);
+                if (configuration.EnableDump)
+                    Dump(context);
+                else Response(context.Response, "FEATURE_DISABLED", HttpStatusCode.Locked);
             }
             else if (path.StartsWith("/auth"))
             {
@@ -102,23 +106,33 @@ namespace LMFS.Core
             }
             else if (path.StartsWith("/get"))
             {
-                Get(context);
+                if (configuration.EnableGet)
+                    Get(context);
+                else Response(context.Response, "FEATURE_DISABLED", HttpStatusCode.Locked);
             }
             else if (path.StartsWith("/set"))
             {
-                Set(context);
+                if (configuration.EnableSet)
+                    Set(context);
+                else Response(context.Response, "FEATURE_DISABLED", HttpStatusCode.Locked);
             }
             else if (path.StartsWith("/push"))
             {
-                Push(context);
+                if (configuration.EnablePush)
+                    Push(context);
+                else Response(context.Response, "FEATURE_DISABLED", HttpStatusCode.Locked);
             }
             else if (path.StartsWith("/rm"))
             {
-                Remove(context);
+                if (configuration.EnableRM)
+                    Remove(context);
+                else Response(context.Response, "FEATURE_DISABLED", HttpStatusCode.Locked);
             }
             else if (path.StartsWith("/mkdir"))
             {
-                Mkdir(context);
+                if (configuration.EnableMkdir)
+                    Mkdir(context);
+                else Response(context.Response, "FEATURE_DISABLED", HttpStatusCode.Locked);
             }
         }
         private void _Auth(HttpListenerContext context)
@@ -474,8 +488,8 @@ namespace LMFS.Core
                     }
                 }
                 {
-                    var Folder=GetMappedFolder(_path,out var relative, out var root);
-                    if(Folder != null)
+                    var Folder = GetMappedFolder(_path, out var relative, out var root);
+                    if (Folder != null)
                     {
 
                     }
@@ -485,7 +499,7 @@ namespace LMFS.Core
                         return;
                     }
                 }
-                if(false)
+                if (false)
                 {
                     if (GetPath(_path, out var relative, out var combined, out var root))
                     {
@@ -551,8 +565,8 @@ namespace LMFS.Core
                                 case DataType.Default:
                                     {
                                         //Send back list.
-                                        var code=Folder.GetFolder(relative, out var dir);
-                                        if (code== LMFSFSFolderGetCode.done)
+                                        var code = Folder.GetFolder(relative, out var dir);
+                                        if (code == LMFSFSFolderGetCode.done)
                                         {
 
                                         }
@@ -587,10 +601,10 @@ namespace LMFS.Core
                         }
                         else if (Folder.IsFileExist(relative))
                         {
-                            var file=Folder.SubGetFile(relative);
+                            var file = Folder.SubGetFile(relative);
                             if (responseType == DataType.Default)
                             {
-                                using (var fs = file.OpenRead())
+                                using (var fs = file.file.OpenRead())
                                 {
                                     fs.CopyTo(context.Response.OutputStream);
                                 }
@@ -598,12 +612,12 @@ namespace LMFS.Core
                             }
                             else if (responseType == DataType.Hash)
                             {
-                                Response(context.Response, File.ReadAllBytes(file.FullName).HashString(), HttpStatusCode.NotFound);
+                                Response(context.Response, File.ReadAllBytes(file.file.FullName).HashString(), HttpStatusCode.NotFound);
 
                             }
                             else if (responseType == DataType.WriteTime)
                             {
-                                Response(context.Response, File.GetLastWriteTimeUtc(file.FullName).ToBinary().ToString(), HttpStatusCode.NotFound);
+                                Response(context.Response, File.GetLastWriteTimeUtc(file.file.FullName).ToBinary().ToString(), HttpStatusCode.NotFound);
 
                             }
                         }
@@ -614,7 +628,7 @@ namespace LMFS.Core
                         return;
                     }
                 }
-                if(false)
+                if (false)
                 {
                     if (GetPath(_path, out var relative, out var combined, out var root))
                     {

@@ -10,5 +10,12 @@
         public bool server_shell = false;
         public string userbase = null;
         public string authbase = null;
+        public bool EnableDump = false;
+        public bool EnableBrowse = true;
+        public bool EnableGet = true;
+        public bool EnableSet = true;
+        public bool EnablePush= true;
+        public bool EnableRM= true;
+        public bool EnableMkdir= true;
     }
 }
